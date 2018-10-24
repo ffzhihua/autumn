@@ -1,5 +1,5 @@
 ## TITLE
-autumn go framwork
+autumn go framework
 
 ## build
 `make`
