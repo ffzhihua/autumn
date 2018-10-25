@@ -14,7 +14,10 @@ type BaseModel struct {
 
 //返回数据库对象
 func (i *BaseModel) DB(name ...string) *gorm.DB {
-	dbname := strings.ToLower(name[0])
+	dbname := ""
+	if len(name) > 0 {
+		dbname = strings.ToLower(name[0])
+	}
 	if dbname == "" {
 		return db.DB["mysql"]
 	}
