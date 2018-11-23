@@ -1,15 +1,13 @@
 package db
 
 import (
-	"autumn/tools/cfg"
+	"arutam/tools/cfg"
 	"fmt"
+	log "github.com/alecthomas/log4go"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/tidwall/gjson"
-	"log"
-	"os"
 	"strings"
-
 	//"strings"
 )
 
@@ -17,7 +15,7 @@ var DB map[string]*gorm.DB
 
 func InitMySQL() {
 
-	filename:= "config/mysql.conf"
+	filename := cfg.ConfPath + "config/mysql.conf"
 	content := cfg.Cfg_read(filename)
 
 	DB = make(map[string]*gorm.DB)
@@ -44,15 +42,38 @@ func mysql_connect(project string) *gorm.DB {
 		cfg.Get("mysql", project+".charset").String(),
 	)
 	var err error
+
 	db, err := gorm.Open("mysql", dsn)
+	db.DB().SetMaxOpenConns(10)
+	db.DB().SetMaxIdleConns(10)
+	db.DB().SetConnMaxLifetime(10)
 	if err != nil {
-		log.Fatal("[GIN-MYSQL(" + project + ")] connect to mysql error:" + err.Error())
+		log.Error("[GIN-MYSQL(" + project + ")] connect to mysql error:" + err.Error())
 	}
 
-	log.Println("[GIN-MYSQL(" + project + ")] connected success")
+	log.Info("[GIN-MYSQL(" + project + ")] connected success")
 
-	db.LogMode(true)
-	db.SetLogger(log.New(os.Stdout, "[GIN-MYSQL("+project+")]", 0))
+	dev := cfg.Get("env", "mysql_debug").Bool()
+
+	if dev {
+		db.LogMode(true)
+
+		db.SetLogger(logger{"[SQL(" + project + ")]"})
+	}
 
 	return db
+}
+
+/**
+ *自定义gorm log 输出
+ *实现gorm logger print方法
+ */
+
+type logger struct {
+	flag string
+}
+
+func (logger logger) Print(value ...interface{}) {
+
+	log.Info(value,logger.flag)
 }
